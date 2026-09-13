@@ -111,6 +111,15 @@ npm run preview
 - Theme and interface preferences are kept in browser local storage.
 - The UI respects reduced-motion settings, keyboard navigation, modal focus trapping, and Escape-to-close.
 
+## GitHub Pages deployment
+
+The frontend is configured for static hosting on GitHub Pages. The Vite build uses a relative base path so the app can load correctly from a repository project site such as `https://<username>.github.io/anirory-library/`.
+
+1. Push the repository to GitHub.
+2. In the repository settings, open Pages and choose the GitHub Actions deployment source.
+3. If the UI needs to talk to a hosted backend, configure the repository variable `VITE_API_BASE_URL` before pushing to `main`.
+4. The workflow in `.github/workflows/deploy.yml` builds the React app and publishes the `frontend/dist` output automatically.
+
 ## Production deployment
 
 Use a dedicated least-privilege MySQL account, terminate TLS at a reverse proxy, set explicit production `CORS_ORIGINS`, and run Uvicorn behind a process manager. Build `frontend/dist` and serve those static assets from a CDN or web server. Never commit `.env` files.
