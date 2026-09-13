@@ -1,0 +1,14 @@
+@keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes modalIn{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes notificationIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes barGrow{from{width:0}}
+@keyframes chartGrow{from{height:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes liquidMorph{0%,100%{border-radius:17px 14px 18px 13px}33%{border-radius:13px 19px 14px 20px}66%{border-radius:20px 13px 19px 15px}}
+@keyframes rippleWave{from{transform:translate(-50%,-50%) scale(0);opacity:.38}to{transform:translate(-50%,-50%) scale(5);opacity:0}}
+@keyframes shimmer{to{background-position:-200% 0}}
+@keyframes attention{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--glow) 24%,transparent),var(--shadow)}}
+.page-enter{animation:pageIn .5s cubic-bezier(.22,1,.36,1) both}.floating{animation:float 3.4s ease-in-out infinite}.ripple{position:relative;overflow:hidden}.ripple.rippling::after{content:'';position:absolute;left:var(--ripple-x);top:var(--ripple-y);width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.62);pointer-events:none;animation:rippleWave .65s ease-out both}.skeleton{background:linear-gradient(100deg,color-mix(in srgb,var(--surface) 75%,transparent) 30%,color-mix(in srgb,var(--primary) 10%,var(--surface-strong)) 48%,color-mix(in srgb,var(--surface) 75%,transparent) 65%);background-size:200% 100%;animation:shimmer 1.35s linear infinite}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.cursor-ambient{display:none}}
+
