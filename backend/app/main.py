@@ -1,5 +1,6 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,13 +12,31 @@ from .routers.books import router as books_router
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("anirory")
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Vercel has no release command, so initialize the database when a new
+    # serverless instance starts. The seed operation is idempotent.
+    from seed import seed
+
+    seed()
+    yield
+
+
 app = FastAPI(
     title="Anirory Library API",
     version="1.0.0",
     description="Administrative catalog services for Anirory.",
+    lifespan=lifespan,
 )
 
-origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]
+origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,https://anirology.github.io"
+    ).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -39,4 +58,3 @@ def health():
 
 
 app.include_router(books_router)
-

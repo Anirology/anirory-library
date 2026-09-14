@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const productionApiUrl = 'https://anirory-library-api-anirology.onrender.com'
+const productionApiUrl = 'https://anirory-library-api-anirology.vercel.app'
 
 export const apiBaseUrl = (
   import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : productionApiUrl)

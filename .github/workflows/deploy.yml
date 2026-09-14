@@ -42,7 +42,7 @@ jobs:
       - name: Build static site
         run: pnpm run build
         env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://anirory-library-api-anirology.onrender.com' }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://anirory-library-api-anirology.vercel.app' }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

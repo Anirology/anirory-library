@@ -117,19 +117,20 @@ The frontend is configured for static hosting on GitHub Pages. The Vite build us
 
 1. Push the repository to GitHub.
 2. In the repository settings, open Pages and choose the GitHub Actions deployment source.
-3. The production build defaults to `https://anirory-library-api-anirology.onrender.com`. To use a different backend, configure the repository variable `VITE_API_BASE_URL` before pushing to `main`.
+3. The production build defaults to `https://anirory-library-api-anirology.vercel.app`. To use a different backend, configure the repository variable `VITE_API_BASE_URL` before pushing to `main`.
 4. The workflow in `.github/workflows/deploy.yml` builds the React app and publishes the `frontend/dist` output automatically.
 
 ## Backend deployment from GitHub
 
-GitHub Pages cannot execute FastAPI, so the repository includes a Render Blueprint in `render.yaml`. Render pulls the backend from GitHub, provisions PostgreSQL, seeds the catalog, and publishes the API at `https://anirory-library-api-anirology.onrender.com`.
+GitHub Pages cannot execute FastAPI. The no-card deployment uses Vercel Hobby for the FastAPI serverless function and Neon Free for PostgreSQL. Both services can connect directly to this GitHub repository.
 
 1. Push this repository to GitHub.
-2. Open [the Render Blueprint deployment page](https://render.com/deploy?repo=https://github.com/Anirology/anirory-library).
-3. Sign in, review the free web service and PostgreSQL database, and apply the Blueprint.
-4. Wait for `/health` to return a successful response. The GitHub Pages frontend is already configured to use that API URL.
+2. Import `Anirology/anirory-library` into Vercel, use `backend` as the Root Directory, and name the project `anirory-library-api-anirology`.
+3. In the Vercel project, add a Neon database from Storage and connect it to Production. The integration supplies `DATABASE_URL` without exposing it to the frontend.
+4. Set `CORS_ORIGINS=https://anirology.github.io` in the Vercel project environment and deploy.
+5. Wait for `/health` to return a successful response. The GitHub Pages frontend is already configured to use that API URL.
 
-The free Render web service can sleep while idle and its free PostgreSQL database is intended for evaluation rather than permanent production data. Select paid plans in `render.yaml` before deployment if the catalog must remain continuously available.
+The Vercel Hobby plan and Neon Free plan have usage limits, but neither requires a credit card for this deployment.
 
 ## Production deployment
 
