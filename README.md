@@ -117,8 +117,19 @@ The frontend is configured for static hosting on GitHub Pages. The Vite build us
 
 1. Push the repository to GitHub.
 2. In the repository settings, open Pages and choose the GitHub Actions deployment source.
-3. If the UI needs to talk to a hosted backend, configure the repository variable `VITE_API_BASE_URL` before pushing to `main`.
+3. The production build defaults to `https://anirory-library-api-anirology.onrender.com`. To use a different backend, configure the repository variable `VITE_API_BASE_URL` before pushing to `main`.
 4. The workflow in `.github/workflows/deploy.yml` builds the React app and publishes the `frontend/dist` output automatically.
+
+## Backend deployment from GitHub
+
+GitHub Pages cannot execute FastAPI, so the repository includes a Render Blueprint in `render.yaml`. Render pulls the backend from GitHub, provisions PostgreSQL, seeds the catalog, and publishes the API at `https://anirory-library-api-anirology.onrender.com`.
+
+1. Push this repository to GitHub.
+2. Open [the Render Blueprint deployment page](https://render.com/deploy?repo=https://github.com/Anirology/anirory-library).
+3. Sign in, review the free web service and PostgreSQL database, and apply the Blueprint.
+4. Wait for `/health` to return a successful response. The GitHub Pages frontend is already configured to use that API URL.
+
+The free Render web service can sleep while idle and its free PostgreSQL database is intended for evaluation rather than permanent production data. Select paid plans in `render.yaml` before deployment if the catalog must remain continuously available.
 
 ## Production deployment
 
