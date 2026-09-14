@@ -1,4 +1,5 @@
 import { CheckCircle2, MonitorCog, Palette, Save } from 'lucide-react'
+import { isDemoMode } from '../services/api.js'
 
 export default function Settings({ preferences, onChange, theme, onTheme, notify }) {
   const toggle = (key) => onChange({ ...preferences, [key]: !preferences[key] })
@@ -6,6 +7,6 @@ export default function Settings({ preferences, onChange, theme, onTheme, notify
     <div className="settings-grid"><section className="panel glass"><div className="section-heading"><div><span className="eyebrow">Notifications & layout</span><h2>Interface preferences</h2></div><MonitorCog aria-hidden="true" /></div>
       {[['reminders', 'Automatic reminders', 'Surface upcoming due dates and overdue items.'], ['summary', 'Email activity summary', 'Prepare a daily digest for administrators.'], ['compact', 'Compact catalog mode', 'Show denser book cards in catalog results.']].map(([key, title, copy]) => <label className="switch-row" key={key}><span><b>{title}</b><small>{copy}</small></span><input type="checkbox" checked={preferences[key]} onChange={() => toggle(key)} /><span className="switch" aria-hidden="true" /></label>)}
       <fieldset className="theme-field"><legend><Palette aria-hidden="true" />Theme selection</legend><div className="segmented"><button className={theme === 'light' ? 'selected' : ''} onClick={() => onTheme('light')}>Light</button><button className={theme === 'dark' ? 'selected' : ''} onClick={() => onTheme('dark')}>Dark</button><button className={theme === 'system' ? 'selected' : ''} onClick={() => onTheme('system')}>System</button></div></fieldset>
-    </section><aside className="panel glass system-card"><span className="system-pulse"><CheckCircle2 aria-hidden="true" /></span><span className="eyebrow">System status</span><h2>All services operational</h2><p>Catalog API configured for the Anirory MySQL service.</p><dl><div><dt>Frontend</dt><dd>Connected</dd></div><div><dt>API endpoint</dt><dd>{import.meta.env.VITE_API_BASE_URL || 'localhost:8000'}</dd></div><div><dt>Preference storage</dt><dd>Local device</dd></div></dl></aside></div>
+    </section><aside className="panel glass system-card"><span className="system-pulse"><CheckCircle2 aria-hidden="true" /></span><span className="eyebrow">System status</span><h2>{isDemoMode ? 'Demo catalog active' : 'All services operational'}</h2><p>{isDemoMode ? 'Showing sample records until a public catalog API is configured.' : 'Catalog API configured for the Anirory MySQL service.'}</p><dl><div><dt>Frontend</dt><dd>Connected</dd></div><div><dt>API endpoint</dt><dd>{import.meta.env.VITE_API_BASE_URL || 'Demo catalog'}</dd></div><div><dt>Preference storage</dt><dd>Local device</dd></div></dl></aside></div>
   </div>
 }
