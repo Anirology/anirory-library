@@ -8,6 +8,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from .routers.books import router as books_router
+from .routers.auth import router as auth_router
+from .routers.library import router as library_router
+from .database import initialize_schema, SessionLocal
+from sqlalchemy import text
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("anirory")
@@ -15,11 +19,10 @@ logger = logging.getLogger("anirory")
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # Vercel has no release command, so initialize the database when a new
-    # serverless instance starts. The seed operation is idempotent.
-    from seed import seed
-
-    seed()
+    initialize_schema()
+    if os.getenv("SEED_CATALOG", "false").lower() == "true":
+        from seed import seed
+        seed()
     yield
 
 
@@ -40,10 +43,18 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def private_responses(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -54,7 +65,11 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError):
 
 @app.get("/health", tags=["system"])
 def health():
+    with SessionLocal() as db:
+        db.execute(text("SELECT 1"))
     return {"status": "ok", "service": "anirory-api"}
 
 
 app.include_router(books_router)
+app.include_router(auth_router)
+app.include_router(library_router)

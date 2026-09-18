@@ -9,7 +9,7 @@ import { createBook, deleteBook, getBook, getErrorMessage, listBooks, replaceBoo
 const CATEGORIES = ['Arts', 'Biography', 'Business', 'Education', 'Environment', 'Fiction', 'Health', 'History', 'Philosophy', 'Psychology', 'Reference', 'Science', 'Social Sciences', 'Technology', 'Travel']
 const DEFAULTS = { search: '', category: '', max_price: '', available: '', sort: 'newest' }
 
-export default function Books({ addSignal, detailSignal, compact, notify, onCatalogChange }) {
+export default function Books({ addSignal, onAddHandled, detailSignal, compact, notify, onCatalogChange, canEdit = true }) {
   const [filters, setFilters] = useState(DEFAULTS)
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [books, setBooks] = useState([])
@@ -23,23 +23,25 @@ export default function Books({ addSignal, detailSignal, compact, notify, onCata
   const [formOpen, setFormOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [saving, setSaving] = useState(false)
-  const firstAdd = useRef(true)
+  const requestVersion = useRef(0)
 
   useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(filters.search), 350); return () => clearTimeout(timer) }, [filters.search])
 
   const fetchBooks = useCallback(async (page = 1, append = false) => {
+    const version = ++requestVersion.current
     append ? setLoadingMore(true) : setLoading(true)
     setError('')
     try {
       const data = await listBooks({ ...filters, search: debouncedSearch, page, page_size: 24 })
+      if (version !== requestVersion.current) return
       setBooks((current) => append ? [...current, ...data.items] : data.items)
       setMeta(data)
-    } catch (e) { setError(getErrorMessage(e)) }
-    finally { setLoading(false); setLoadingMore(false) }
+    } catch (e) { if (version === requestVersion.current) setError(getErrorMessage(e)) }
+    finally { if (version === requestVersion.current) { setLoading(false); setLoadingMore(false) } }
   }, [filters.category, filters.max_price, filters.available, filters.sort, debouncedSearch])
 
   useEffect(() => { fetchBooks() }, [fetchBooks])
-  useEffect(() => { if (firstAdd.current) { firstAdd.current = false; return } setFormBook(undefined); setFormOpen(true) }, [addSignal])
+  useEffect(() => { if (!addSignal || !canEdit) return; setFormBook(undefined); setFormOpen(true); onAddHandled() }, [addSignal, canEdit])
   useEffect(() => { if (detailSignal?.id) openDetails(detailSignal.id) }, [detailSignal])
 
   const openDetails = async (id) => {
@@ -66,7 +68,7 @@ export default function Books({ addSignal, detailSignal, compact, notify, onCata
   const reset = () => setFilters(DEFAULTS)
   const update = (event) => setFilters((current) => ({ ...current, [event.target.name]: event.target.value }))
   return <div className="page page-enter">
-    <header className="page-header"><div><span className="eyebrow">Catalog operations</span><h1>Books</h1><p>Search, curate and maintain every library record.</p></div><button className="button primary ripple" onClick={() => { setFormBook(undefined); setFormOpen(true) }}><Plus aria-hidden="true" />Add book</button></header>
+    <header className="page-header"><div><span className="eyebrow">Catalog operations</span><h1>Books</h1><p>Search, curate and maintain every library record.</p></div>{canEdit && <button className="button primary ripple" onClick={() => { setFormBook(undefined); setFormOpen(true) }}><Plus aria-hidden="true" />Add book</button>}</header>
     <section className="filters-panel glass" aria-label="Catalog filters">
       <label className="search-field"><Search aria-hidden="true" /><span className="sr-only">Search books</span><input name="search" value={filters.search} onChange={update} placeholder="Title, author, category or book ID" /></label>
       <label><span>Category</span><select name="category" value={filters.category} onChange={update}><option value="">All categories</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
@@ -80,9 +82,8 @@ export default function Books({ addSignal, detailSignal, compact, notify, onCata
     {!error && loading && <div className="books-grid">{[...Array(8)].map((_, i) => <div className="book-card skeleton" key={i} />)}</div>}
     {!error && !loading && books.length === 0 && <div className="state-card glass"><Search aria-hidden="true" /><h2>No books found</h2><p>Try a broader search or clear the active filters.</p><button className="button secondary ripple" onClick={reset}>Reset filters</button></div>}
     {!error && books.length > 0 && <><section className="books-grid" aria-label="Book results">{books.map((book) => <BookCard key={book.id} book={book} compact={compact} onDetails={openDetails} />)}</section>{meta.page < meta.pages && <div className="load-more"><button className="button secondary ripple" disabled={loadingMore} onClick={() => fetchBooks(meta.page + 1, true)}>{loadingMore ? 'Loading…' : `Load more (${books.length} of ${meta.total})`}</button></div>}</>}
-    {(detail || detailLoading) && <BookDetails book={detail} loading={detailLoading} onClose={() => setDetail(null)} onEdit={(book) => { setDetail(null); setFormBook(book); setFormOpen(true) }} onDelete={(book) => { setDetail(null); setDeleteTarget(book) }} />}
+    {(detail || detailLoading) && <BookDetails canEdit={canEdit} book={detail} loading={detailLoading} onClose={() => setDetail(null)} onEdit={(book) => { setDetail(null); setFormBook(book); setFormOpen(true) }} onDelete={(book) => { setDetail(null); setDeleteTarget(book) }} />}
     {formOpen && <BookFormModal book={formBook} saving={saving} onClose={() => { if (!saving) setFormOpen(false) }} onSubmit={save} />}
     {deleteTarget && <DeleteConfirmation book={deleteTarget} deleting={saving} onClose={() => !saving && setDeleteTarget(null)} onConfirm={remove} />}
   </div>
 }
-

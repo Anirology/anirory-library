@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal, initialize_schema
 from app.models import Book
 
 INITIAL = [
@@ -68,7 +68,7 @@ def build_catalog():
 
 
 def seed():
-    Base.metadata.create_all(bind=engine)
+    initialize_schema()
     catalog = build_catalog()
     inserted = 0
     with SessionLocal() as db:
@@ -83,4 +83,3 @@ def seed():
 
 if __name__ == "__main__":
     seed()
-

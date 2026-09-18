@@ -1,14 +1,20 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 
-database_file = os.path.join(tempfile.gettempdir(), "anirory-api-tests.sqlite3")
+database_handle, database_file = tempfile.mkstemp(prefix="anirory-api-tests-", suffix=".sqlite3")
+os.close(database_handle)
 os.environ["DATABASE_URL"] = f"sqlite:///{database_file}"
 
 from fastapi.testclient import TestClient
 
 from app.database import Base, engine
 from app.main import app
+from app.database import SessionLocal
+from app.models import User, AuthSession
+from app.auth import hash_password, token_digest
+from app.timeutils import utcnow
 
 
 class BookApiTests(unittest.TestCase):
@@ -17,6 +23,13 @@ class BookApiTests(unittest.TestCase):
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
         cls.client = TestClient(app)
+        with SessionLocal() as db:
+            user = User(email="staff@example.com", name="Test Staff", role="admin", password_hash=hash_password("test-password-123"))
+            db.add(user)
+            db.flush()
+            db.add(AuthSession(token_hash=token_digest("test-session"), user_id=user.id, expires_at=utcnow() + timedelta(hours=1)))
+            db.commit()
+        cls.client.headers["Authorization"] = "Bearer test-session"
 
     @classmethod
     def tearDownClass(cls):
@@ -59,6 +72,13 @@ class BookApiTests(unittest.TestCase):
         self.assertEqual(invalid.status_code, 422)
         self.assertEqual(self.client.patch("/books/999999", json={"available": True}).status_code, 404)
         self.assertEqual(self.client.delete("/books/999999").status_code, 404)
+
+    def test_null_unknown_and_empty_updates(self):
+        created = self.client.post("/books", json={"title": "Validation Book", "author": "Validation Author", "price": "10.00", "category": "Science"})
+        self.assertEqual(created.status_code, 201)
+        book_id = created.json()["id"]
+        for payload in ({"price": None}, {"available": None}, {}, {"unknown": True}):
+            self.assertEqual(self.client.patch(f"/books/{book_id}", json=payload).status_code, 422)
 
 
 if __name__ == "__main__":

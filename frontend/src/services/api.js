@@ -6,15 +6,45 @@ export const apiBaseUrl = (
   import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : productionApiUrl)
 ).replace(/\/+$/, '')
 
-// Kept as a compatibility export for the settings screen. The catalog always
-// uses the API; there is no in-browser fallback dataset.
-export const isDemoMode = false
-
 const api = axios.create({
   baseURL: apiBaseUrl,
   timeout: 12000,
   headers: { 'Content-Type': 'application/json' },
 })
+
+let accessToken = sessionStorage.getItem('anirory-session') || ''
+export const clearSession = () => { accessToken = ''; sessionStorage.removeItem('anirory-session') }
+api.interceptors.request.use((config) => {
+  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`
+  return config
+})
+api.interceptors.response.use((response) => response, (error) => {
+  if (error.response?.status === 401 && !error.config.url.endsWith('/auth/login')) {
+    clearSession()
+    window.dispatchEvent(new Event('anirory-signed-out'))
+  }
+  return Promise.reject(error)
+})
+export const login = async (email, password) => {
+  const { data } = await api.post('/auth/login', { email, password })
+  accessToken = data.access_token
+  sessionStorage.setItem('anirory-session', accessToken)
+  return data.user
+}
+export const getCurrentUser = async () => (await api.get('/auth/me')).data
+export const logout = async () => { try { await api.post('/auth/logout') } finally { clearSession() } }
+export const listMembers = async (filters = {}) => (await api.get('/members', { params: cleanParams(filters) })).data
+export const createMember = async (data) => (await api.post('/members', data)).data
+export const replaceMember = async (id, data) => (await api.put(`/members/${id}`, data)).data
+export const deleteMember = async (id) => api.delete(`/members/${id}`)
+export const listLoans = async (filters = {}) => (await api.get('/loans', { params: cleanParams(filters) })).data
+export const issueLoan = async (data) => (await api.post('/loans', data)).data
+export const returnLoan = async (id) => (await api.post(`/loans/${id}/return`)).data
+export const getDashboard = async () => (await api.get('/dashboard')).data
+export const changePassword = async (data) => (await api.post('/auth/password', data)).data
+export const listUsers = async () => (await api.get('/users')).data
+export const createUser = async (data) => (await api.post('/users', data)).data
+export const updateUser = async (id, data) => (await api.patch(`/users/${id}`, data)).data
 
 const cleanParams = (values) => Object.fromEntries(
   Object.entries(values).filter(([, value]) => value !== '' && value !== null && value !== undefined)
